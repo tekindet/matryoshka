@@ -18,6 +18,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type Project struct {
+	ID          string `gorm:"id" json:"id"`
+	Name        string `gorm:"name" json:"name"`
+	Description string `gorm:"description" json:"description"`
+}
+
 func main() {
 
 	err := godotenv.Load()
@@ -28,7 +34,7 @@ func main() {
 	dsn := "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=Africa/Nairobi"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
-	db.AutoMigrate()
+	db.AutoMigrate(&Project{})
 
 	cli, err := client.NewClientWithOpts(
 		client.WithHost("unix:///var/run/docker.sock"),
