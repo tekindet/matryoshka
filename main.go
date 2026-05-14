@@ -43,18 +43,33 @@ func StartPostgresContainer(cli *client.Client) {
 
 	slog.Info("starting database container....")
 
+	cnt_cfg := &container.Config{
+		Hostname:     "database",
+		Domainname:   "database",
+		AttachStdin:  true,
+		AttachStdout: true,
+		AttachStderr: true,
+		ExposedPorts: make(nat.PortSet),
+		Cmd:          strslice.StrSlice{},
+	}
+
+	hst_cfg := &container.HostConfig{
+		AutoRemove:  true,
+		NetworkMode: container.NetworkMode("host"),
+		PortBindings: nat.PortMap{
+			"5432": []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: "5432",
+				},
+			},
+		},
+	}
+
 	res, err := cli.ContainerCreate(
 		context.Background(),
-		&container.Config{
-			Hostname:     "database",
-			Domainname:   "database",
-			AttachStdin:  true,
-			AttachStdout: true,
-			AttachStderr: true,
-			ExposedPorts: make(nat.PortSet),
-			Cmd:          strslice.StrSlice{"ls"},
-		},
-		&container.HostConfig{AutoRemove: true},
+		cnt_cfg,
+		hst_cfg,
 		&network.NetworkingConfig{},
 		&v1.Platform{Architecture: "x86_64"},
 		"postgres",
