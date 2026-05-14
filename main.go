@@ -24,6 +24,10 @@ type Project struct {
 	Description string `gorm:"description" json:"description"`
 }
 
+func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("ok"))
+}
+
 func main() {
 
 	err := godotenv.Load()
@@ -62,10 +66,7 @@ func main() {
 
 	StartPostgresContainer(cli)
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("ok"))
-	})
-
+	http.HandleFunc("/health", HealthCheckHandler)
 	slog.Info("server starting.....")
 
 	log.Fatal(http.ListenAndServe(":5000", nil))
