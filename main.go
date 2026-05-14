@@ -27,6 +27,18 @@ func main() {
 	}
 	defer cli.Close()
 
+	// todo : to be attached to containers of the same mesh/swarm
+	_, err = cli.NetworkCreate(
+		context.Background(), "test-network",
+		network.CreateOptions{
+			Driver:     "bridge",
+			Attachable: true,
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	StartPostgresContainer(cli)
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -85,4 +97,12 @@ func StartPostgresContainer(cli *client.Client) {
 	}
 
 	slog.Info("starting database container....", "response", res.ID)
+
+	err = cli.ContainerStart(context.Background(), res.ID, container.StartOptions{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	slog.Info("container started successfully", "container", res.ID)
+
 }
