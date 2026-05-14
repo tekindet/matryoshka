@@ -61,7 +61,7 @@ func StartPostgresContainer(cli *client.Client) {
 
 	hst_cfg := &container.HostConfig{
 		AutoRemove:  true,
-		NetworkMode: container.NetworkMode("host"),
+		NetworkMode: container.NetworkMode("bridge"),
 		PortBindings: nat.PortMap{
 			"5432/tcp": []nat.PortBinding{
 				{
