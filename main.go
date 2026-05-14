@@ -6,16 +6,30 @@ import (
 	"log/slog"
 	"net/http"
 
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
 
-	// todo : move host to DOCKER_HOST env
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dsn := "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=Africa/Nairobi"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	db.AutoMigrate()
+
 	cli, err := client.NewClientWithOpts(
 		client.WithHost("unix:///var/run/docker.sock"),
 		client.WithAPIVersionNegotiation(),
@@ -36,7 +50,8 @@ func main() {
 		},
 	)
 	if err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
+		slog.Warn("could not create network", "error", err.Error())
 	}
 
 	StartPostgresContainer(cli)
@@ -62,7 +77,7 @@ func StartPostgresContainer(cli *client.Client) {
 		AttachStdout: true,
 		AttachStderr: true,
 		ExposedPorts: nat.PortSet{
-			"5432": struct{}{},
+			"5435": struct{}{},
 		},
 		Env: []string{
 			"POSTGRES_PASSWORD=postgres",
@@ -78,7 +93,7 @@ func StartPostgresContainer(cli *client.Client) {
 			"5432/tcp": []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
-					HostPort: "5432",
+					HostPort: "5435",
 				},
 			},
 		},
