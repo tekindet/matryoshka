@@ -8,7 +8,6 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -44,20 +43,27 @@ func StartPostgresContainer(cli *client.Client) {
 	slog.Info("starting database container....")
 
 	cnt_cfg := &container.Config{
+		Image:        "postgres:latest",
 		Hostname:     "database",
 		Domainname:   "database",
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
-		ExposedPorts: make(nat.PortSet),
-		Cmd:          strslice.StrSlice{},
+		ExposedPorts: nat.PortSet{
+			"5432": struct{}{},
+		},
+		Env: []string{
+			"POSTGRES_PASSWORD=postgres",
+			"POSTGRES_USER=postgres",
+			"POSTGRES_DB=postgres",
+		},
 	}
 
 	hst_cfg := &container.HostConfig{
 		AutoRemove:  true,
 		NetworkMode: container.NetworkMode("host"),
 		PortBindings: nat.PortMap{
-			"5432": []nat.PortBinding{
+			"5432/tcp": []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
 					HostPort: "5432",
