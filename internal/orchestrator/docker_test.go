@@ -151,7 +151,7 @@ func TestOrchestrator_InterServiceNetworking(t *testing.T) {
 	defer cli.ContainerRemove(ctx, appID, container.RemoveOptions{Force: true})
 
 	execConfig := container.ExecOptions{
-		Cmd:          []string{"nc", "-z", "-v", "cache-serviceee", "6370"},
+		Cmd:          []string{"nc", "-z", "-v", "cache-service", "6379"},
 		AttachStderr: true,
 		AttachStdout: true,
 	}
