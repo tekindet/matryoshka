@@ -22,3 +22,13 @@ func TestHealthEndpoint(t *testing.T) {
 		t.Fatalf(`expected "ok", got %q`, w.Body.String())
 	}
 }
+
+func TestPostgresContainerStart(t *testing.T) {
+	// some configs for a container that we will get
+	// from the user????
+
+	// is it a network test or just a function test
+
+	// we need a dockerfile here
+	StartPostgresContainer()
+}

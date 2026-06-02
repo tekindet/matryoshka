@@ -14,15 +14,10 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/tekindet/matryoshka/internal/domain"
 
 	"github.com/joho/godotenv"
 )
-
-type Project struct {
-	ID          string `gorm:"id" json:"id"`
-	Name        string `gorm:"name" json:"name"`
-	Description string `gorm:"description" json:"description"`
-}
 
 func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ok"))
@@ -38,7 +33,7 @@ func main() {
 	dsn := "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=Africa/Nairobi"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
-	db.AutoMigrate(&Project{})
+	db.AutoMigrate(&domain.Project{})
 
 	cli, err := client.NewClientWithOpts(
 		client.WithHost("unix:///var/run/docker.sock"),
