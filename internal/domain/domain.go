@@ -22,11 +22,12 @@ type Project struct {
 }
 
 type Service struct {
-	ID        string `gorm:"column:id;primaryKey" json:"id"`
-	ProjectID string `gorm:"project_id" json:"project_id"`
-	Name      string `gorm:"name" json:"name"`
-	Type      string `gorm:"column:type" json:"type"`
-	Status    string `gorm:"status" json:"status"`
+	ID           string `gorm:"column:id;primaryKey" json:"id"`
+	ProjectID    string `gorm:"project_id" json:"project_id"`
+	Name         string `gorm:"name" json:"name"`
+	Type         string `gorm:"column:type" json:"type"`
+	Status       string `gorm:"status" json:"status"`
+	ExternalPort int    `gorm:"external_port" json:"external_port"`
 }
 
 type Network struct {
