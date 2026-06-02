@@ -74,3 +74,34 @@ func TestCreateProject_Success(t *testing.T) {
 		t.Errorf("expected network %s to be provisioned, got %v", expectedNetworkName, orch.CreatedNetworks)
 	}
 }
+
+func TestMannager_CreateService(t *testing.T) {
+	store := &MockStore{projects: make(map[string]*domain.Project)}
+	orch := &MockOrchestrator{}
+	m := manager.NewPaaSManager(store, orch)
+
+	ctx := context.Background()
+
+	proj, err := m.CreateProject(ctx, "data-pipeline", "Processes large streams")
+	if err != nil {
+		t.Fatalf("wanted project to be created but got : %v", err)
+	}
+
+	svc, err := m.CreateService(ctx, "cache-layer", proj.ID, domain.ServiceTypeRedis)
+	if err != nil {
+		t.Fatalf("wanted service to be provisioned but got : %v", err)
+	}
+
+	if svc.Name != "cache-layer" {
+		t.Errorf("wanted svc name to be %s got %s", "cache-layer", svc.Name)
+	}
+
+	if svc.Type != domain.ServiceTypeRedis {
+		t.Errorf("wanted svc type to be %s got %s", domain.ServiceTypeRedis, svc.Type)
+	}
+
+	if svc.Status != domain.ServiceStatusRunning {
+		t.Errorf("wanted svc status to be %s got %s", domain.ServiceStatusRunning, svc.Status)
+	}
+
+}
