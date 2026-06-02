@@ -87,7 +87,7 @@ func TestMannager_CreateService(t *testing.T) {
 		t.Fatalf("wanted project to be created but got : %v", err)
 	}
 
-	svc, err := m.CreateService(ctx, "cache-layer", proj.ID, domain.ServiceTypeRedis)
+	svc, err := m.CreateService(ctx, proj.ID, "cache-layer", domain.ServiceTypeRedis)
 	if err != nil {
 		t.Fatalf("wanted service to be provisioned but got : %v", err)
 	}
