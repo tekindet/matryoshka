@@ -54,7 +54,9 @@ func (d *DockerOrchestrator) DeployService(ctx context.Context, svc *domain.Serv
 		exposedPorts = nat.PortSet{"6379/tcp": struct{}{}}
 
 	case domain.ServiceTypeApp:
-		return "", fmt.Errorf("service not implemented yet")
+		image = "ealen/echo-server:latest"
+		env = []string{"PORT=8080"}
+		exposedPorts = nat.PortSet{"8080/tcp": struct{}{}}
 
 	case domain.ServiceTypeQueue:
 		return "", fmt.Errorf("service not implemented yet")
@@ -78,13 +80,21 @@ func (d *DockerOrchestrator) DeployService(ctx context.Context, svc *domain.Serv
 		NetworkMode: container.NetworkMode(networkName),
 	}
 
+	networkingConfig := &network.NetworkingConfig{
+		EndpointsConfig: map[string]*network.EndpointSettings{
+			networkName: {
+				Aliases: []string{svc.Name},
+			},
+		},
+	}
+
 	containerName := fmt.Sprintf("%s-%s", svc.Name, svc.ID[:6])
 
 	res, err := d.cli.ContainerCreate(
 		ctx,
 		config,
 		hostConfig,
-		&network.NetworkingConfig{},
+		networkingConfig,
 		&v1.Platform{Architecture: "x86_64"},
 		containerName,
 	)
