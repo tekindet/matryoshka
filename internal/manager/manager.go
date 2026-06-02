@@ -3,6 +3,9 @@ package manager
 import (
 	"context"
 	"errors"
+	"fmt"
+
+	"github.com/google/uuid"
 
 	"github.com/tekindet/matryoshka/internal/domain"
 )
@@ -32,4 +35,26 @@ type PaaSManager struct {
 
 func NewPaaSManager(store Store, orch Orchestrator) *PaaSManager {
 	return &PaaSManager{store: store, orch: orch}
+}
+
+func (m *PaaSManager) CreateProject(ctx context.Context, name, description string) (*domain.Project, error) {
+	projectID := uuid.New().String()
+
+	project := &domain.Project{
+		ID:          projectID,
+		Name:        name,
+		Description: description,
+	}
+
+	if err := m.store.CreateProject(ctx, project); err != nil {
+		return nil, fmt.Errorf("failed to save new project %v", err)
+	}
+
+	networkName := fmt.Sprintf("net-%s", project.ID)
+	_, err := m.orch.CreateNetwork(ctx, networkName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to provision project network %v", err)
+	}
+
+	return project, nil
 }
