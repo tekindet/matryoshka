@@ -31,6 +31,6 @@ func (d *DockerOrchestrator) CreateNetwork(ctx context.Context, name string) (st
 	return res.ID, nil
 }
 
-func (d *DockerOrchestrator) DeployService(ctx context.Context, svc *domain.Deployment, networkName string) (string, error) {
+func (d *DockerOrchestrator) DeployService(ctx context.Context, svc *domain.Service, networkName string) (string, error) {
 	return "not-yet-implemented", nil
 }

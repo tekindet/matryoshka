@@ -25,7 +25,7 @@ type Service struct {
 	ID        string `gorm:"id" json:"id"`
 	ProjectID string `gorm:"project_id" json:"project_id"`
 	Name      string `gorm:"name" json:"name"`
-	Type      string `gorm:"type" json:"type"`
+	Type      string `gorm:"column:type" json:"type"`
 	Status    string `gorm:"status" json:"status"`
 }
 
