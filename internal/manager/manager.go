@@ -75,21 +75,20 @@ func (m *PaaSManager) CreateService(ctx context.Context, projectID, name, svcTyp
 		Status:    domain.ServiceStatusPending,
 	}
 
-	if err := m.store.CreateService(ctx, svc); err != nil {
-		return nil, fmt.Errorf("failed to create service : %v", err)
-	}
-
 	networkName := fmt.Sprintf("net-%s", proj.ID)
-	_, err = m.orch.CreateNetwork(ctx, networkName)
+
+	_, err = m.orch.DeployService(ctx, svc, networkName)
 	if err != nil {
 		svc.Status = domain.ServiceStatusFailed
 
-		// todo : need to update the state here
 		return nil, fmt.Errorf("failed to deploy infrastructure : %v", err)
 	}
 
 	svc.Status = domain.ServiceStatusRunning
-	// todo : same here, need to update the state in the store
+
+	if err := m.store.CreateService(ctx, svc); err != nil {
+		return nil, fmt.Errorf("failed to create service : %v", err)
+	}
 
 	return svc, nil
 }
