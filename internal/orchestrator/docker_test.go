@@ -2,6 +2,8 @@ package orchestrator_test
 
 import (
 	"context"
+	"net/http"
+	"strconv"
 	"testing"
 	"time"
 
@@ -184,6 +186,63 @@ func TestOrchestrator_InterServiceNetworking(t *testing.T) {
 
 	if inspectRes.ExitCode != 0 {
 		t.Errorf("Networking isolation test failed. Web app container could not resolve or reach 'cache-service:6379'. Exit code: %d", inspectRes.ExitCode)
+	}
+
+}
+
+func TestOrchestrator_ExposeServiceToPublic(t *testing.T) {
+
+	cli, err := client.NewClientWithOpts(
+		client.WithHost("unix:///var/run/docker.sock"),
+		client.WithAPIVersionNegotiation(),
+	)
+	if err != nil {
+		t.Fatalf("could not create a docker client %v", err)
+	}
+	defer cli.Close()
+
+	orch := orchestrator.NewDockerOrchestrator(cli)
+	ctx := context.Background()
+
+	networkName := "net-ingress-test"
+
+	_, err = orch.CreateNetwork(ctx, networkName)
+	if err != nil {
+		t.Skip("failed to create network, might already exist")
+	}
+
+	defer cli.NetworkRemove(ctx, networkName)
+
+	publicSvc := &domain.Service{
+		ID:        "app-ingress-123",
+		ProjectID: "project-ingress",
+		Name:      "public-web-app",
+		Type:      domain.ServiceTypeApp,
+	}
+
+	containerID, err := orch.DeployService(ctx, publicSvc, networkName)
+	if err != nil {
+		t.Fatalf("failed to deploy service : %v", err)
+	}
+
+	defer cli.ContainerRemove(ctx, containerID, container.RemoveOptions{Force: true})
+
+	if publicSvc.ExternalPort == 0 {
+		t.Fatal("Expected Orchestrator to assign an ExternalPort to the app service, got 0")
+	}
+
+	targetURL := "http://localhost:" + strconv.Itoa(publicSvc.ExternalPort) + "/"
+
+	time.Sleep(10 * time.Second)
+	resp, err := http.Get(targetURL)
+
+	if err != nil {
+		t.Fatalf("Failed to reach exposed application on host port %d after retries: %v", publicSvc.ExternalPort, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status code 200 from exposed service, got %d", resp.StatusCode)
 	}
 
 }

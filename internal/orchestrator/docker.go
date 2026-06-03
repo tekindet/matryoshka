@@ -3,6 +3,8 @@ package orchestrator
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
@@ -34,10 +36,24 @@ func (d *DockerOrchestrator) CreateNetwork(ctx context.Context, name string) (st
 	return res.ID, nil
 }
 
+func getFreePort() (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
+}
+
 func (d *DockerOrchestrator) DeployService(ctx context.Context, svc *domain.Service, networkName string) (string, error) {
 	var image string
 	var env []string
 	var exposedPorts nat.PortSet
+	var portBindings nat.PortMap
 
 	switch svc.Type {
 	case domain.ServiceTypePostgres:
@@ -56,7 +72,23 @@ func (d *DockerOrchestrator) DeployService(ctx context.Context, svc *domain.Serv
 	case domain.ServiceTypeApp:
 		image = "ealen/echo-server:latest"
 		env = []string{"PORT=8080"}
+
 		exposedPorts = nat.PortSet{"8080/tcp": struct{}{}}
+
+		hostPort, err := getFreePort()
+		if err != nil {
+			return "", fmt.Errorf("failed to allocate a free host port: %w", err)
+		}
+
+		portBindings = nat.PortMap{
+			"8080/tcp": []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: strconv.Itoa(hostPort),
+				},
+			},
+		}
+		svc.ExternalPort = hostPort
 
 	case domain.ServiceTypeQueue:
 		return "", fmt.Errorf("service not implemented yet")
@@ -76,8 +108,9 @@ func (d *DockerOrchestrator) DeployService(ctx context.Context, svc *domain.Serv
 	}
 
 	hostConfig := &container.HostConfig{
-		AutoRemove:  true,
-		NetworkMode: container.NetworkMode(networkName),
+		AutoRemove:   true,
+		NetworkMode:  container.NetworkMode(networkName),
+		PortBindings: portBindings,
 	}
 
 	networkingConfig := &network.NetworkingConfig{
