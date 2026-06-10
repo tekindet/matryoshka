@@ -25,8 +25,20 @@ func (m *MockStore) GetProject(ctx context.Context, id string) (*domain.Project,
 	return proj, nil
 }
 
+func (m *MockStore) ListProjects(ctx context.Context) ([]*domain.Project, error) {
+	projects := make([]*domain.Project, 0, len(m.projects))
+	for _, p := range m.projects {
+		projects = append(projects, p)
+	}
+	return projects, nil
+}
+
 func (m *MockStore) CreateService(ctx context.Context, svc *domain.Service) error {
 	return nil
+}
+
+func (m *MockStore) ListServices(ctx context.Context, projectID string) ([]*domain.Service, error) {
+	return nil, nil
 }
 
 type MockOrchestrator struct {

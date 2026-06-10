@@ -15,6 +15,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/tekindet/matryoshka/internal/domain"
+	"github.com/tekindet/matryoshka/internal/graphql"
 	"github.com/tekindet/matryoshka/internal/manager"
 	"github.com/tekindet/matryoshka/internal/orchestrator"
 	"github.com/tekindet/matryoshka/internal/store"
@@ -60,10 +61,13 @@ func main() {
 
 	//StartPostgresContainer(cli)
 
-	http.HandleFunc("/health", HealthCheckHandler)
-	slog.Info("Matryoshka PaaS Engine started running on port :5000")
+	gqlResolver := graphql.New(paasManager)
+	http.Handle("/graphql", gqlResolver.Handler())
 
-	log.Fatal(http.ListenAndServe(":5000", nil))
+	http.HandleFunc("/health", HealthCheckHandler)
+	slog.Info("Matryoshka PaaS Engine started running on port :8080")
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func StartPostgresContainer(cli *client.Client) {

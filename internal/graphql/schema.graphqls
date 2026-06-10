@@ -1,0 +1,36 @@
+type Project {
+  id: ID!
+  name: String!
+  description: String!
+  services: [Service!]!
+}
+
+type Service {
+  id: ID!
+  projectId: ID!
+  name: String!
+  type: String!
+  status: String!
+  externalPort: Int!
+}
+
+type Query {
+  project(id: ID!): Project
+  projects: [Project!]!
+}
+
+input CreateProjectInput {
+  name: String!
+  description: String!
+}
+
+input CreateServiceInput {
+  projectId: ID!
+  name: String!
+  type: String!
+}
+
+type Mutation {
+  createProject(input: CreateProjectInput!): Project!
+  createService(input: CreateServiceInput!): Service!
+}

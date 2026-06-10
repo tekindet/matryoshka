@@ -14,13 +14,18 @@ var ErrProjectNotFound = errors.New("project not found")
 
 type Manager interface {
 	CreateProject(ctx context.Context, name, description string) (*domain.Project, error)
-	CreateService(ctx context.Context, projectID, svcType string) (*domain.Service, error)
+	GetProject(ctx context.Context, id string) (*domain.Project, error)
+	ListProjects(ctx context.Context) ([]*domain.Project, error)
+	CreateService(ctx context.Context, projectID, name, svcType string) (*domain.Service, error)
+	ListServices(ctx context.Context, projectID string) ([]*domain.Service, error)
 }
 
 type Store interface {
 	CreateProject(ctx context.Context, proj *domain.Project) error
 	GetProject(ctx context.Context, id string) (*domain.Project, error)
+	ListProjects(ctx context.Context) ([]*domain.Project, error)
 	CreateService(ctx context.Context, svc *domain.Service) error
+	ListServices(ctx context.Context, projectID string) ([]*domain.Service, error)
 }
 
 type Orchestrator interface {
@@ -57,6 +62,18 @@ func (m *PaaSManager) CreateProject(ctx context.Context, name, description strin
 	}
 
 	return project, nil
+}
+
+func (m *PaaSManager) GetProject(ctx context.Context, id string) (*domain.Project, error) {
+	return m.store.GetProject(ctx, id)
+}
+
+func (m *PaaSManager) ListProjects(ctx context.Context) ([]*domain.Project, error) {
+	return m.store.ListProjects(ctx)
+}
+
+func (m *PaaSManager) ListServices(ctx context.Context, projectID string) ([]*domain.Service, error) {
+	return m.store.ListServices(ctx, projectID)
 }
 
 func (m *PaaSManager) CreateService(ctx context.Context, projectID, name, svcType string) (*domain.Service, error) {
