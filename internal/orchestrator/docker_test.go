@@ -2,17 +2,47 @@ package orchestrator_test
 
 import (
 	"context"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/tekindet/matryoshka/internal/domain"
 	"github.com/tekindet/matryoshka/internal/orchestrator"
 )
+
+func TestMain(m *testing.M) {
+	cli, err := client.NewClientWithOpts(
+		client.WithHost("unix:///var/run/docker.sock"),
+		client.WithAPIVersionNegotiation(),
+	)
+	if err != nil {
+		os.Exit(1)
+	}
+	defer cli.Close()
+
+	images := []string{
+		"redis:7-alpine",
+		"ealen/echo-server:latest",
+	}
+	ctx := context.Background()
+	for _, img := range images {
+		reader, err := cli.ImagePull(ctx, img, image.PullOptions{})
+		if err != nil {
+			os.Exit(1)
+		}
+		io.Copy(io.Discard, reader)
+		reader.Close()
+	}
+
+	os.Exit(m.Run())
+}
 
 func TestOrchestrator_CreateNetwork(t *testing.T) {
 
