@@ -133,7 +133,7 @@ func (d *DockerOrchestrator) DeployService(ctx context.Context, svc *domain.Serv
 	)
 
 	if err != nil {
-		return "", fmt.Errorf("failed creating contianer configuration")
+		return "", fmt.Errorf("failed creating container configuration: %w", err)
 	}
 
 	err = d.cli.ContainerStart(context.Background(), res.ID, container.StartOptions{})
