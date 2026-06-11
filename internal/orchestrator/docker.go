@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 
 	"github.com/docker/docker/api/types/container"
@@ -17,6 +18,8 @@ import (
 type DockerOrchestrator struct {
 	cli *client.Client
 }
+
+const defaultAppImage = "matryoshka-datetime-app:latest"
 
 func NewDockerOrchestrator(cli *client.Client) *DockerOrchestrator {
 	return &DockerOrchestrator{cli: cli}
@@ -49,6 +52,14 @@ func getFreePort() (int, error) {
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
+func appImage() string {
+	if image := os.Getenv("MATRYOSHKA_APP_IMAGE"); image != "" {
+		return image
+	}
+
+	return defaultAppImage
+}
+
 func (d *DockerOrchestrator) DeployService(ctx context.Context, svc *domain.Service, networkName string) (string, error) {
 	var image string
 	var env []string
@@ -70,7 +81,7 @@ func (d *DockerOrchestrator) DeployService(ctx context.Context, svc *domain.Serv
 		exposedPorts = nat.PortSet{"6379/tcp": struct{}{}}
 
 	case domain.ServiceTypeApp:
-		image = "ealen/echo-server:latest"
+		image = appImage()
 		env = []string{"PORT=8080"}
 
 		exposedPorts = nat.PortSet{"8080/tcp": struct{}{}}

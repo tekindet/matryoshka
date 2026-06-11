@@ -5,11 +5,13 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
+	"github.com/tekindet/matryoshka/internal/domain"
 	"github.com/tekindet/matryoshka/internal/manager"
 )
 
 type Resolver struct {
-	mgr manager.Manager
+	mgr           manager.Manager
+	projectObject *graphql.Object
 }
 
 func New(mgr manager.Manager) *Resolver {
@@ -32,15 +34,6 @@ func (r *Resolver) Handler() http.Handler {
 	})
 }
 
-var projectType = graphql.NewObject(graphql.ObjectConfig{
-	Name: "Project",
-	Fields: graphql.Fields{
-		"id":          &graphql.Field{Type: graphql.NewNonNull(graphql.ID)},
-		"name":        &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
-		"description": &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
-	},
-})
-
 var serviceType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Service",
 	Fields: graphql.Fields{
@@ -53,7 +46,43 @@ var serviceType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+func (r *Resolver) projectType() *graphql.Object {
+	if r.projectObject != nil {
+		return r.projectObject
+	}
+
+	r.projectObject = graphql.NewObject(graphql.ObjectConfig{
+		Name: "Project",
+		Fields: graphql.Fields{
+			"id":          &graphql.Field{Type: graphql.NewNonNull(graphql.ID)},
+			"name":        &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+			"description": &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+			"services": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.NewList(graphql.NewNonNull(serviceType))),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					switch project := p.Source.(type) {
+					case *domain.Project:
+						return r.mgr.ListServices(p.Context, project.ID)
+					case domain.Project:
+						return r.mgr.ListServices(p.Context, project.ID)
+					case map[string]interface{}:
+						if id, ok := project["id"].(string); ok {
+							return r.mgr.ListServices(p.Context, id)
+						}
+					}
+
+					return nil, nil
+				},
+			},
+		},
+	})
+
+	return r.projectObject
+}
+
 func (r *Resolver) QueryType() *graphql.Object {
+	projectType := r.projectType()
+
 	return graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
@@ -77,6 +106,8 @@ func (r *Resolver) QueryType() *graphql.Object {
 }
 
 func (r *Resolver) MutationType() *graphql.Object {
+	projectType := r.projectType()
+
 	return graphql.NewObject(graphql.ObjectConfig{
 		Name: "Mutation",
 		Fields: graphql.Fields{

@@ -18,6 +18,8 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	os.Setenv("MATRYOSHKA_APP_IMAGE", "ealen/echo-server:latest")
+
 	cli, err := client.NewClientWithOpts(
 		client.WithHost("unix:///var/run/docker.sock"),
 		client.WithAPIVersionNegotiation(),

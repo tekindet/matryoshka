@@ -36,11 +36,12 @@ func (m *mockManager) ListProjects(ctx context.Context) ([]*domain.Project, erro
 
 func (m *mockManager) CreateService(ctx context.Context, projectID, name, svcType string) (*domain.Service, error) {
 	svc := &domain.Service{
-		ID:        "svc-1",
-		ProjectID: projectID,
-		Name:      name,
-		Type:      svcType,
-		Status:    domain.ServiceStatusRunning,
+		ID:           "svc-1",
+		ProjectID:    projectID,
+		Name:         name,
+		Type:         svcType,
+		Status:       domain.ServiceStatusRunning,
+		ExternalPort: 49152,
 	}
 	m.services = append(m.services, svc)
 	return svc, nil
@@ -132,6 +133,46 @@ func TestProjectQuery(t *testing.T) {
 	proj := result["project"].(map[string]interface{})
 	if proj["id"] != "p1" {
 		t.Errorf("expected id p1, got %v", proj["id"])
+	}
+}
+
+func TestProjectQueryIncludesServices(t *testing.T) {
+	mgr := &mockManager{
+		projects: []*domain.Project{
+			{ID: "p1", Name: "alpha", Description: "first project"},
+		},
+		services: []*domain.Service{
+			{
+				ID:           "svc-1",
+				ProjectID:    "p1",
+				Name:         "sample-app",
+				Type:         domain.ServiceTypeApp,
+				Status:       domain.ServiceStatusRunning,
+				ExternalPort: 49152,
+			},
+		},
+	}
+	r := graphql.New(mgr)
+	s, err := gql.NewSchema(gql.SchemaConfig{
+		Query:    r.QueryType(),
+		Mutation: r.MutationType(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	query := `query { project(id: "p1") { id services { id name type status externalPort } } }`
+	result := execute(t, s, query)
+
+	proj := result["project"].(map[string]interface{})
+	services := proj["services"].([]interface{})
+	if len(services) != 1 {
+		t.Fatalf("expected 1 service, got %d", len(services))
+	}
+
+	svc := services[0].(map[string]interface{})
+	if svc["name"] != "sample-app" {
+		t.Errorf("expected service name sample-app, got %v", svc["name"])
 	}
 }
 
